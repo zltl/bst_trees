@@ -22,7 +22,7 @@ void try_find(struct tree *t, int key) {
     if (n == t_nil) {
         printf("not fould key: %d\n", key);
     } else {
-        printf("find key: %ld, priority is %d\n", (long)n->key, (long)n->fea.priority);
+        printf("find key: %ld, priority is %ld\n", (long)n->key, (long)n->fea.priority);
     }
 }
 int main() {

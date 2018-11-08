@@ -8,6 +8,10 @@ struct tree_node *t_nil = &t_null_node;
 #define T_KEY_LT(less, k1, k2) less(k1, k2)
 #define T_KEY_EQ(less, k1, k2) !(less(k1, k2) || less(k2, k1))
 
+static int max(int a, int b) {
+    return a > b ? a : b;
+}
+
 struct tree_node *tree_search(struct tree *t, void *key) {
     assert(t);
     struct tree_node *x = t->root;
@@ -17,6 +21,15 @@ struct tree_node *tree_search(struct tree *t, void *key) {
         else
             x = x->right;
     return x;
+}
+
+int tree_height(struct tree *t, struct tree_node *x) {
+    if (x == t_nil) {
+        return 0;
+    }
+    int l = tree_height(t, x->left);
+    int r = tree_height(t, x->right);
+    return max(l, r) + 1;
 }
 
 struct tree_node *tree_min(struct tree *t, struct tree_node *r) {
@@ -150,6 +163,7 @@ struct tree_node *bst_insert(struct tree *t, struct tree_node *z) {
         y->right = z;
     z->left = t_nil;
     z->right = t_nil;
+    return z;
 }
 
 void bst_delete(struct tree *t, struct tree_node *z) {
@@ -346,6 +360,7 @@ static void rb_tree_delete_fixup(struct tree *t, struct tree_node *x) {
 void rb_tree_delete(struct tree *t, struct tree_node *z) {
     assert(t);
     assert(z);
+    printf("delete %ld\n", (long)z->key);
     struct tree_node *x = t_nil;
     struct tree_node *y = z;
     enum rb_color y_origin_color = y->fea.color;
@@ -429,10 +444,6 @@ void treap_delete(struct tree *t, struct tree_node *z) {
         z->p->left = t_nil;
     else
         z->p->right = t_nil;
-}
-
-static int max(int a, int b) {
-    return a > b ? a : b;
 }
 
 static void update_height(struct tree_node *x) {

@@ -63,8 +63,12 @@ int main() {
         printf("max empty\n");
     }
 
-    printf("delete 4\n");
+    rb_tree_delete(&t, a);
+    rb_tree_delete(&t, b);
     rb_tree_delete(&t, c);
+    rb_tree_delete(&t, d);
+    rb_tree_delete(&t, e);
+    rb_tree_delete(&t, f);
     x_free_node(c);
     for (i = 0; i < 10; i++) {
         try_find(&t, i);

@@ -1,12 +1,16 @@
 #include <stdio.h>
 #include <assert.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum rb_color {
     BLACK, RED
 };
 
 enum rb_tree_type {
-    T_BST,T_RB,T_AVL,T_TREAP,T_SPLAY
+    T_BST,T_RB,T_AVL,T_TREAP
 };
 
 struct tree_node {
@@ -33,6 +37,7 @@ extern struct tree_node *t_nil;
 #define T_INITIAL {NULL, NULL, t_nil, T_BST}
 #define N_INITIAL {t_nil, t_nil, t_nil, {RED}, t_nil, t_nil}
 
+int tree_height(struct tree *t, struct tree_node *x);
 struct tree_node *tree_search(struct tree *t, void *key);
 struct tree_node *tree_min(struct tree *t, struct tree_node *r);
 struct tree_node *tree_max(struct tree *t, struct tree_node *r);
@@ -48,3 +53,7 @@ void treap_delete(struct tree *t, struct tree_node *z);
 struct tree_node *treap_insert(struct tree *t, struct tree_node *z);
 void avl_delete(struct tree *t, struct tree_node *z);
 struct tree_node *avl_insert(struct tree *t, struct tree_node *z);
+
+#ifdef __cplusplus
+}
+#endif
