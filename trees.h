@@ -38,6 +38,7 @@ extern struct tree_node *t_nil;
 #define N_INITIAL {t_nil, t_nil, t_nil, {RED}, t_nil, t_nil}
 
 int tree_height(struct tree *t, struct tree_node *x);
+void tree_travel(struct tree *t, struct tree_node *r, void(*fn)(struct tree_node *n));
 struct tree_node *tree_search(struct tree *t, void *key);
 struct tree_node *tree_min(struct tree *t, struct tree_node *r);
 struct tree_node *tree_max(struct tree *t, struct tree_node *r);

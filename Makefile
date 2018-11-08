@@ -1,7 +1,7 @@
 
 CXX = g++
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 CXXFLAGS = -Wall -std=c++11
 
 C_SOURCE = trees.c rb_example.c treap_example.c bst_example.c avl_example.c

@@ -23,6 +23,14 @@ struct tree_node *tree_search(struct tree *t, void *key) {
     return x;
 }
 
+void tree_travel(struct tree *t, struct tree_node *r, void(*fn)(struct tree_node *n)) {
+    if (r == t_nil)
+        return;
+    fn(r);
+    tree_travel(t, r->left, fn);
+    tree_travel(t, r->right, fn);
+}
+
 int tree_height(struct tree *t, struct tree_node *x) {
     if (x == t_nil) {
         return 0;
@@ -96,10 +104,10 @@ void bst_right_rotate(struct tree *t, struct tree_node *x) {
     y->p = x->p;
     if (x->p == t_nil)
         t->root = y;
-    else if (x == x->p->left)
-        x->p->left = y;
-    else
+    else if (x == x->p->right)
         x->p->right = y;
+    else
+        x->p->left = y;
     y->right = x;
     x->p = y;
 }
@@ -129,8 +137,6 @@ void bst_left_rotate(struct tree *t, struct tree_node *x) {
 
 /* replace u with v */
 static void bst_transplant(struct tree *t, struct tree_node *u, struct tree_node *v) {
-    assert(t);
-    assert(u);
     if (u->p == t_nil)
         t->root = v;
     else if (u == u->p->left)
@@ -205,7 +211,7 @@ static void rb_insert_fixup(struct tree *t, struct tree_node *z) {
                 z->p->fea.color = BLACK;
                 y->fea.color = BLACK;
                 z->p->p->fea.color = RED;
-                z =  z->p->p;
+                z = z->p->p;
                 continue;
             }
             if (z == z->p->right) {
@@ -243,7 +249,7 @@ static void rb_insert_fixup(struct tree *t, struct tree_node *z) {
                 z->p->fea.color = BLACK;
                 y->fea.color = BLACK;
                 z->p->p->fea.color = RED;
-                z =  z->p->p;
+                z = z->p->p;
                 continue;
             }
             if (z == z->p->left) {
@@ -283,6 +289,7 @@ static void rb_tree_delete_fixup(struct tree *t, struct tree_node *x) {
                 x->p->fea.color = RED;
                 bst_left_rotate(t, x->p);
                 w = x->p->right;
+                continue;
             }
             if (w->left->fea.color == BLACK && w->right->fea.color == BLACK) {
                 /*
@@ -296,6 +303,7 @@ static void rb_tree_delete_fixup(struct tree *t, struct tree_node *x) {
                 */
                 w->fea.color = RED;
                 x = x->p;
+                continue;
             } else if (w->right->fea.color == BLACK) {
                 /*
                     case 3 - brother is BLACK, brother->left is red, brother->right is BLACK
@@ -337,10 +345,12 @@ static void rb_tree_delete_fixup(struct tree *t, struct tree_node *x) {
                 x->p->fea.color = RED;
                 bst_right_rotate(t, x->p);
                 w = x->p->left;
+                continue;
             }
-            if (w->left->fea.color == BLACK && w->right->fea.color == BLACK) {
+            if (w->right->fea.color == BLACK && w->left->fea.color == BLACK) {
                 w->fea.color = RED;
                 x = x->p;
+                continue;
             } else if (w->left->fea.color == BLACK) {
                w->right->fea.color = BLACK;
                w->fea.color = RED;
@@ -360,7 +370,6 @@ static void rb_tree_delete_fixup(struct tree *t, struct tree_node *x) {
 void rb_tree_delete(struct tree *t, struct tree_node *z) {
     assert(t);
     assert(z);
-    printf("delete %ld\n", (long)z->key);
     struct tree_node *x = t_nil;
     struct tree_node *y = z;
     enum rb_color y_origin_color = y->fea.color;
@@ -435,12 +444,25 @@ struct tree_node *treap_insert(struct tree *t, struct tree_node *z) {
 void treap_delete(struct tree *t, struct tree_node *z) {
     assert(t);
     assert(z);
-    while (z->left != t_nil && z->right != t_nil)
+    while (z->left != t_nil || z->right != t_nil) {
+        if (z->left == t_nil) {
+            bst_transplant(t, z, z->right);
+            return;
+        }
+        if (z->right == t_nil) {
+            bst_transplant(t, z, z->left);
+            return;
+        }
+
         if (treap_pri_less(t, z->left, z->right))
-            bst_left_rotate(t, z);
-        else 
             bst_right_rotate(t, z);
-    if (z->p->left == z)
+        else 
+            bst_left_rotate(t, z);
+
+    }
+    if (z == t->root)
+        t->root = t_nil;
+    else if (z->p->left == z)
         z->p->left = t_nil;
     else
         z->p->right = t_nil;
@@ -548,54 +570,28 @@ struct tree_node *avl_insert(struct tree *t, struct tree_node *z) {
 }
 
 static void avl_delete_fixup(struct tree *t, struct tree_node *w) {
-    struct tree_node *x, *y, *z;
-    if (w == t_nil)
+    while (w != t_nil) {
+        update_height(w);
         w = w->p;
-    x = y = z = w;
-    while (z != t_nil) {
-        update_height(z);
-        if (!avl_is_balance(z)) {
-            if (z->left->fea.height > z->right->fea.height) {
-                y = z->left;
-            } else {
-                y = z->right;
-            }
-            if (y->left->fea.height > y->right->fea.height) {
-                x = y->left;
-            } else {
-                x = y->right;
-            }
-            avl_rebalance(t, x, y, z);
-        }
-        z = z->p;
     }
 }
 
 void avl_delete(struct tree *t, struct tree_node *z) {
     assert(t);
     assert(z);
-    struct tree_node *x = t_nil;
-    struct tree_node *y = z;
-    if (z->left == t_nil) {
-        x = z->p;
-        bst_transplant(t, z, z->right);
-    } else if (z->right == t_nil) {
-        x = z->p;
-        bst_transplant(t, z, z->left);
-    } else {
-        y = tree_min(t, z->right);
-        if (y->p != z) {
-            x = y->p;
-            bst_transplant(t, y, y->right);
-            y->right = z->right;
-            y->right->p = y;
-        } else {
-            x = y;
-        }
-        bst_transplant(t, z, y);
-        y->left = z->left;
-        z->left->p = y;
+    while (z->left != t_nil || z->right != t_nil) {
+        if (z->left->fea.height < z->right->fea.height)
+            avl_left_rotate(t, z);
+        else
+            avl_right_rotate(t, z);
     }
-    if (t->root != t_nil)
-        avl_delete_fixup(t, x);
+    if (z == t->root) {
+        t->root = t_nil;
+    } else {
+        if (z == z->p->left)
+            z->p->left = t_nil;
+        else
+            z->p->right = t_nil;
+        avl_delete_fixup(t, z->p);
+    }
 }

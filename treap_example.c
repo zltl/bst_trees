@@ -65,9 +65,13 @@ int main() {
         printf("max empty\n");
     }
 
-    printf("delete 4\n");
+    printf("delete all\n");
+    treap_delete(&t, a);
+    treap_delete(&t, b);
     treap_delete(&t, c);
-    x_free_node(c);
+    treap_delete(&t, d);
+    treap_delete(&t, e);
+    treap_delete(&t, f);
     for (i = 0; i < 10; i++) {
         try_find(&t, i);
     }

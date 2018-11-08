@@ -57,30 +57,23 @@ void free_node(struct tree_node* n) {
     delete static_cast<string*>(n->key);
     free(n);
 }
-struct tree_node *new_treap_node(string key, string pri) {
+struct tree_node *new_treap_node(string key, long pri) {
     struct tree_node* n = (struct tree_node*)malloc(sizeof(struct tree_node));
     assert(n);
     n->p = n->left = n->right = t_nil;
     n->key = static_cast<void*>(new string(key));
-    n->fea.priority = static_cast<void*>(new string(pri));
+    n->fea.priority = reinterpret_cast<void*>(pri);
     return n;
 }
 void free_treap_node(struct tree_node* n) {
     delete static_cast<string*>(n->key);
-    delete static_cast<string*>(n->fea.priority);
     free(n);
 }
 int less(void* a, void* b) { 
     return *static_cast<string*>(a) < *static_cast<string*>(b);
 }
-void try_find(struct tree* t, int key) {
-    struct tree_node* n = tree_search(t, (void*)(long)key);
-    cout << "find " << key << ": ";
-    if (n == t_nil) {
-        cout << "OK" << endl;
-    } else {
-        cout << "NOT FOUND" << endl;
-    }
+int pri_less(void *a, void *b) {
+    return reinterpret_cast<long>(a) < reinterpret_cast<long>(b);
 }
 
 void bench_bst(const vector<string> &keys) {
@@ -95,15 +88,14 @@ void bench_bst(const vector<string> &keys) {
     }
     auto end = high_resolution_clock::now();
     height = tree_height(&t, t.root);
-    cout << "bst height: " << height << endl;
-    cout << "bst insert:" << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() << endl;
+    auto insert_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
     start = high_resolution_clock::now();
     for (auto key: keys) {
         tree_search(&t, static_cast<void*>(&key));
     }
     end = high_resolution_clock::now();
-    cout << "bst search " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() << endl;
+    auto search_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
     start = high_resolution_clock::now();
     for (auto key: keys) {
@@ -112,7 +104,9 @@ void bench_bst(const vector<string> &keys) {
         free_node(x);
     }
     end = high_resolution_clock::now();
-    cout << "bst search delete " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() << endl;
+    auto delete_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+    cout << "bst\t" << height << "," << insert_time << "," << search_time << "," << delete_time << endl;
 }
 
 void bench_rb(const vector<string> &keys) {
@@ -127,15 +121,14 @@ void bench_rb(const vector<string> &keys) {
     }
     auto end = high_resolution_clock::now();
     height = tree_height(&t, t.root);
-    cout << "rb height: " << height << endl;
-    cout << "rb insert:" << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() << endl;
+    auto insert_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
     start = high_resolution_clock::now();
     for (auto key: keys) {
         tree_search(&t, static_cast<void*>(&key));
     }
     end = high_resolution_clock::now();
-    cout << "rb search " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() << endl;
+    auto search_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
     start = high_resolution_clock::now();
     for (auto key: keys) {
@@ -144,12 +137,94 @@ void bench_rb(const vector<string> &keys) {
         free_node(x);
     }
     end = high_resolution_clock::now();
-    cout << "rb search delete " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() << endl;
+    auto delete_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+    cout << "rb\t" << height << "," << insert_time << "," << search_time << "," << delete_time << endl;
 }
 
-int main() {
-    auto r = random_keys(int(2));
+void travp(struct tree_node *n) {
+    cout << "trav " << *static_cast<string*>(n->key) << endl;
+}
+
+void bench_avl(const vector<string> &keys) {
+    struct tree t = T_INITIAL;
+    t.type = T_AVL;
+    t.key_less = less;
+    int height = 0;
+
+    auto start = high_resolution_clock::now();
+    for (auto key: keys) {
+        avl_insert(&t, new_node(key));
+    }
+    auto end = high_resolution_clock::now();
+    height = tree_height(&t, t.root);
+    auto insert_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+    start = high_resolution_clock::now();
+    for (auto key: keys) {
+        tree_search(&t, static_cast<void*>(&key));
+    }
+    end = high_resolution_clock::now();
+    auto search_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+    start = high_resolution_clock::now();
+    for (auto key: keys) {
+        auto x = tree_search(&t, static_cast<void*>(&key));
+        avl_delete(&t, x);
+        free_node(x);
+    }
+    end = high_resolution_clock::now();
+    auto delete_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+    cout << "avl\t" << height << "," << insert_time << "," << search_time << "," << delete_time << endl;
+}
+
+void bench_treap(const vector<string> &keys) {
+    struct tree t = T_INITIAL;
+    t.type = T_TREAP;
+    t.key_less = less;
+    t.priority_less = pri_less;
+    int height = 0;
+
+    std::uniform_int_distribution<int> uni2(0, 100000007);
+    auto start = high_resolution_clock::now();
+    for (auto key: keys) {
+        treap_insert(&t, new_treap_node(key, uni2(rng)));
+    }
+    auto end = high_resolution_clock::now();
+    height = tree_height(&t, t.root);
+    auto insert_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+    start = high_resolution_clock::now();
+    for (auto key: keys) {
+        tree_search(&t, static_cast<void*>(&key));
+    }
+    end = high_resolution_clock::now();
+    auto search_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+    start = high_resolution_clock::now();
+    for (auto key: keys) {
+        auto x = tree_search(&t, static_cast<void*>(&key));
+        treap_delete(&t, x);
+        free_treap_node(x);
+    }
+    end = high_resolution_clock::now();
+    auto delete_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+    cout << "treap\t" << height << "," << insert_time << "," << search_time << "," << delete_time << endl;
+}
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        cout << "USAGE: " << argv[0] << " num-of-keys" << endl;
+        return 0;
+    }
+    int num = atoi(argv[1]);
+    auto r = random_keys(num);
     cout << "key set: " << r.size() << endl;
+    // cout << "type\theight,insert_time,search_time,delete_time" << endl;
     bench_bst(r);
     bench_rb(r);
+    bench_avl(r);
+    bench_treap(r);
 }
