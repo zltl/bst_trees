@@ -497,11 +497,11 @@ static void avl_rebalance(struct tree *t, struct tree_node *x, struct tree_node 
         left left case
             z                                      y 
            / \                                   /   \
-         y   T4      Right Rotate (z)          x      z
-        / \          - - - - - - - - ->      /  \    /  \ 
-       x   T3                               T1  T2  T3  T4
-      / \
-     T1  T2
+          y   T4      Right Rotate (z)          x      z
+         / \          - - - - - - - - ->      /  \    /  \ 
+        x   T3                               T1  T2  T3  T4
+       / \
+      T1  T2
        */
        avl_right_rotate(t, z);
    } else if (x == y->right && y == z->left) {
