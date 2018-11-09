@@ -7,6 +7,6 @@ ZZZ="0"
 for i in $(seq 1 6); do
     NUM="${NUM}${ZZZ}"
     for j in $(seq 1 10); do
-        ./benchmark "$NUM" >> data.txt
+        ./benchmark "$NUM"
     done
 done
